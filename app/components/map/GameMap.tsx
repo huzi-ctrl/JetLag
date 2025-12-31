@@ -454,10 +454,27 @@ export default function GameMap({ viewMode, userRole, userId, gameId, mapboxToke
     useEffect(() => {
         if (!map.current) return;
 
+        // Helper to normalize coordinates
+        const getLngLat = (loc: any): [number, number] | null => {
+            if (!loc) return null;
+            if (Array.isArray(loc) && loc.length >= 2) return [loc[0], loc[1]];
+            // Handle GeoJSON-like objects or PostGIS return
+            if (loc.coordinates && Array.isArray(loc.coordinates)) return [loc.coordinates[0], loc.coordinates[1]];
+            // Handle Mapbox {lng, lat}
+            if (typeof loc.lng === 'number' && typeof loc.lat === 'number') return [loc.lng, loc.lat];
+            // Handle Geolocation API {longitude, latitude}
+            if (typeof loc.longitude === 'number' && typeof loc.latitude === 'number') return [loc.longitude, loc.latitude];
+            return null;
+        };
+
         // 1. Add/Update
         seekers.forEach(s => {
-            if (!s.location) return;
-            const coords = s.location.coordinates || s.location; // Handle format
+            const coords = getLngLat(s.location);
+
+            if (!coords) {
+                console.warn("Invalid seeker location:", s.location);
+                return;
+            }
 
             if (!seekerMarkersRef.current[s.user_id]) {
                 // Create Element
