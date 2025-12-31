@@ -416,6 +416,89 @@ export default function GameMap({ viewMode, userRole, userId, gameId, mapboxToke
     }, [gameConfig, deductionMask, manualMasks]);
 
 
+    // --- SEEKER TRACKING (For Hiders) ---
+    const [seekers, setSeekers] = useState<any[]>([]);
+    const seekerMarkersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
+
+    useEffect(() => {
+        // Only Hiders can see Seekers (usually). Or Spectators?
+        // Rules: Hider sees Seekers. Seekers do NOT see Hider (except via updates).
+        if (!gameId || userRole !== 'hider') {
+            setSeekers([]);
+            return;
+        }
+
+        const fetchSeekers = async () => {
+            const { data } = await supabase
+                .from('game_players')
+                .select('user_id, location, profiles(username, avatar_url)')
+                .eq('game_id', gameId)
+                .eq('role', 'seeker');
+
+            if (data) setSeekers(data);
+        };
+
+        fetchSeekers();
+
+        const channel = supabase.channel(`map-seekers-${gameId}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'game_players', filter: `game_id=eq.${gameId}` }, (payload) => {
+                // We could filter by role in payload, but easier to just refresh list to catch role swaps etc.
+                fetchSeekers();
+            })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [gameId, userRole]);
+
+    // Update Seeker Markers
+    useEffect(() => {
+        if (!map.current) return;
+
+        // 1. Add/Update
+        seekers.forEach(s => {
+            if (!s.location) return;
+            const coords = s.location.coordinates || s.location; // Handle format
+
+            if (!seekerMarkersRef.current[s.user_id]) {
+                // Create Element
+                const el = document.createElement('div');
+                el.className = 'flex flex-col items-center justify-center';
+
+                // Avatar or Icon
+                const dot = document.createElement('div');
+                dot.className = 'w-6 h-6 bg-red-600 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-[10px] text-white font-bold z-10';
+                dot.innerText = 'S';
+
+                // Optional: Tooltip/Label
+                const label = document.createElement('div');
+                label.className = 'bg-black/80 text-white text-[9px] px-1.5 py-0.5 rounded -mt-8 mb-1 whitespace-nowrap opacity-0 transition-opacity hover:opacity-100 pointer-events-none font-bold uppercase';
+                label.innerText = s.profiles?.username || 'Hunter';
+                el.onmouseenter = () => { label.style.opacity = '1'; };
+                el.onmouseleave = () => { label.style.opacity = '0'; };
+
+                el.appendChild(label);
+                el.appendChild(dot);
+
+                const marker = new mapboxgl.Marker({ element: el })
+                    .setLngLat(coords)
+                    .addTo(map.current!);
+
+                seekerMarkersRef.current[s.user_id] = marker;
+            } else {
+                seekerMarkersRef.current[s.user_id].setLngLat(coords);
+            }
+        });
+
+        // 2. Cleanup (Remove markers for users no longer in list)
+        Object.keys(seekerMarkersRef.current).forEach(id => {
+            if (!seekers.find(s => s.user_id === id)) {
+                seekerMarkersRef.current[id].remove();
+                delete seekerMarkersRef.current[id];
+            }
+        });
+
+    }, [seekers]);
+
     // Render Manual Masks
     const updateManualMasks = () => {
         if (!map.current || !manualMasks) return;
