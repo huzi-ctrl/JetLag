@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   title: "Jetlag",
   description: "Real-time Hide and Seek",
   applicationName: "Jetlag",
+  icons: {
+    icon: '/icon.png',
+    apple: '/apple-icon.png',
+  },
   appleWebApp: {
     capable: true,
     title: "Jetlag",
