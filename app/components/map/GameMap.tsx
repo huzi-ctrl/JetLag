@@ -429,20 +429,30 @@ export default function GameMap({ viewMode, userRole, userId, gameId, mapboxToke
         }
 
         const fetchSeekers = async () => {
-            const { data } = await supabase
+            // Try RPC first for clean GeoJSON
+            const { data, error } = await supabase
+                .rpc('get_game_seekers', { p_game_id: gameId });
+
+            if (!error && data) {
+                setSeekers(data);
+                return;
+            }
+
+            // Fallback to raw select (might return WKB)
+            console.warn("RPC fetch failed, falling back to raw select", error);
+            const { data: rawData } = await supabase
                 .from('game_players')
                 .select('user_id, location, profiles(username, avatar_url)')
                 .eq('game_id', gameId)
                 .eq('role', 'seeker');
 
-            if (data) setSeekers(data);
+            if (rawData) setSeekers(rawData);
         };
 
         fetchSeekers();
 
         const channel = supabase.channel(`map-seekers-${gameId}`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'game_players', filter: `game_id=eq.${gameId}` }, (payload) => {
-                // We could filter by role in payload, but easier to just refresh list to catch role swaps etc.
                 fetchSeekers();
             })
             .subscribe();

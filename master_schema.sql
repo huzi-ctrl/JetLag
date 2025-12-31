@@ -224,3 +224,30 @@ begin
   where game_id = p_game_id and user_id = p_next_hider_id;
 end;
 $$;
+
+-- GET SEEKERS (Clean GeoJSON + Profiles)
+drop function if exists get_game_seekers(uuid);
+create or replace function get_game_seekers(p_game_id uuid)
+returns table (
+  user_id uuid, 
+  location json,
+  username text,
+  avatar_url text
+)
+language plpgsql
+security definer
+as $$
+begin
+    return query
+    select 
+        gp.user_id, 
+        st_asgeojson(gp.location)::json,
+        p.username,
+        p.avatar_url
+    from public.game_players gp
+    join public.profiles p on gp.user_id = p.id
+    where gp.game_id = p_game_id 
+    and gp.role = 'seeker'
+    and gp.location is not null;
+end;
+$$;
