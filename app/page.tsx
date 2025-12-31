@@ -19,7 +19,7 @@ export default function Home() {
   const [userId, setUserId] = useState<string | null>(null);
   const [gameId, setGameId] = useState<string | null>(null);
   const [gameCode, setGameCode] = useState<string | null>(null);
-  const [gameStatus, setGameStatus] = useState<'lobby' | 'active'>('lobby'); // Track status
+  const [gameStatus, setGameStatus] = useState<'lobby' | 'active' | 'ended'>('lobby'); // Track status
   const [gameConfig, setGameConfig] = useState<any>(null); // Store Game Config
 
   // UI State

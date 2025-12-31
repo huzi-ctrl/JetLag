@@ -656,8 +656,8 @@ export default function CardDeck({ gameSize = 'medium', gameId, userId, onOcclus
             if (seekerErr) console.error(`Error fetching seekers: ${seekerErr.message}`);
 
             if (seekers && seekers.length > 0) {
-                let bestSeekerLoc = null;
-                let bestSeekerId = null;
+                let bestSeekerLoc: any = null;
+                let bestSeekerId: any = null;
                 let minD = Infinity;
 
                 // Destination point
