@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #007AFF;
+  /* Bright Blue */
+  --color-primary-dim: #0056b3;
+  --color-secondary: #FFD700;
+  /* Vibrant Yellow */
+  --color-accent: #FF2D55;
+  /* Punchy Red */
+  --color-card-bg: rgba(255, 255, 255, 0.95);
+  --color-glass-border: rgba(255, 255, 255, 0.8);
+  --color-map-overlay: rgba(255, 255, 255, 0.9);
+  --color-success: #34C759;
+  --color-danger: #FF3B30;
+  --color-background: #F2F2F7;
+  /* iOS Light Gray */
+  --color-foreground: #1C1C1E;
+  /* iOS Black */
+}
+
+:root {
+  /* Fallbacks / JS usage */
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+/* Custom Components using @layer components is deprecated/different in v4, 
+   but standard CSS classes work perfectly fine and are safer. */
+
+.glass-panel {
+  background-color: var(--color-card-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: black;
+  box-shadow: 0 0 15px rgba(0, 242, 234, 0.4);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 25px rgba(0, 242, 234, 0.6);
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--color-secondary);
+  color: var(--color-secondary);
+}
+
+body {
+  color: var(--color-foreground);
+  background: var(--color-background);
+  font-family: sans-serif;
+  overflow: hidden;
+  height: 100dvh;
+  /* Use dynamic viewport height for mobile browsers */
+  width: 100dvw;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
+}
+
+/* Utilities */
+.top-safe {
+  top: max(1rem, env(safe-area-inset-top));
+}
+
+/* Secondary controls (below top-safe items like Game Code) */
+.top-safe-secondary {
+  top: max(4.5rem, calc(env(safe-area-inset-top) + 3.5rem));
+}
+
+/* Aligned with the Bottom Center "Hider/Seeker" toggle */
+.bottom-safe-aligned {
+  bottom: max(5rem, calc(env(safe-area-inset-bottom) + 1rem));
+}
+
+.right-safe-margin {
+  right: max(1.5rem, env(safe-area-inset-right, 20px));
+}
+
+.left-safe-margin {
+  left: max(1.5rem, env(safe-area-inset-left, 20px));
+}
+
+/* Missing Safe Area Padding Utilities */
+.pt-safe-top {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+
+.pb-safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.mt-safe-top {
+  margin-top: max(1rem, env(safe-area-inset-top));
+}
+
+.mb-safe-bottom {
+  margin-bottom: max(1rem, env(safe-area-inset-bottom));
+}

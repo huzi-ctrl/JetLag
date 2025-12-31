@@ -1,0 +1,24 @@
+MATCHING LOGIC VERIFICATION (Two-Pass)
+Location: Preston, UK (53.757729, -2.703440)
+-----------------------------------------
+"Commercial Airport"                (Search: "Airport")       -> ⚠️ [Relaxed Tier 2] Airport Trail (address)
+"Transit Line"                      (Search: "Transit Line")  -> ⚠️ [Relaxed Tier 2] Linear Bank Close (address)
+"Station's Name Length"             (Search: "Station's Name Length") -> ⚠️ [Relaxed Tier 2] Naze (address)
+"Street or Path"                    (Search: "Street or Path") -> ⚠️ [Relaxed Tier 2] Pathfinders Drive (address)
+"1st Admin Border (State)"          (Search: "1st Admin Border (State)") -> ⚠️ [Relaxed Tier 1] Stake Pool (locality)
+"2nd Admin Border (County)"         (Search: "2nd Admin Border (County)") -> ⚠️ [Relaxed Tier 2] Second Street (address)
+"3rd Admin (Municipality | City | Town)" (Search: "3rd Admin (Municipality | City | Town)") -> ⚠️ [Relaxed Tier 2] Town Lane (address)
+"4th Admin (Borough)"               (Search: "4th Admin (Borough)") -> ⚠️ [Relaxed Tier 2] Fourth Street (address)
+"Mountain"                          (Search: "Mountain")      -> ⚠️ [Relaxed Tier 1] Mountain (locality)
+"Landmass"                          (Search: "Landmass")      -> ❌ No Result
+"Park"                              (Search: "Park")          -> ⚠️ [Relaxed Tier 1] Park Gate (neighborhood)
+"Amusement Park"                    (Search: "Amusement Park") -> ⚠️ [Relaxed Tier 1] Park Gate (neighborhood)
+"Zoo"                               (Search: "Zoo")           -> ⚠️ [Relaxed Tier 2] Zoological Drive (address)
+"Aquarium"                          (Search: "Aquarium")      -> ⚠️ [Relaxed Tier 2] Aquarium Street (address)
+"Golf Course"                       (Search: "Golf Course")   -> ⚠️ [Relaxed Tier 2] Golf Course Road (address)
+"Museum"                            (Search: "Museum")        -> ⚠️ [Relaxed Tier 2] Museum Street (address)
+"Movie Theater"                     (Search: "Movie Theater") -> ⚠️ [Relaxed Tier 2] Theatre Street (address)
+"Hospital"                          (Search: "Hospital")      -> ⚠️ [Relaxed Tier 2] Hospital Road (address)
+"Library"                           (Search: "Library")       -> ⚠️ [Relaxed Tier 2] Library Street (address)
+"Foreign Consulate"                 (Search: "Foreign Consulate") -> ❌ No Result
+-----------------------------------------
