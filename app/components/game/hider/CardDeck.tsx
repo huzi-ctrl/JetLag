@@ -190,17 +190,8 @@ export default function CardDeck({ gameSize = 'medium', gameId, userId, onOcclus
 
     // 1. Start Draw Process (Draw N, Pick K)
     const startDraw = (drawCount: number, keepCount: number) => {
-        // Enforce Max Hand Size
-        // If current hand + keep > max, user must discard `(hand + keep) - max` cards.
-        const overflow = (hand.length + keepCount) - maxHandSize;
+        // REMOVED: Pre-emptive overflow check. We now allow drafting -> then discard.
 
-        if (overflow > 0) {
-            // Trigger Discard Flow first
-            setPendingReward({ draw: drawCount, keep: keepCount });
-            setDiscardGoal({ count: overflow, draw: 0 }); // 0 draw here means just discard to clear space
-            setIsDiscardMode(true);
-            return;
-        }
 
         let currentDeck = deck;
         if (currentDeck.length < drawCount) {
@@ -236,8 +227,21 @@ export default function CardDeck({ gameSize = 'medium', gameId, userId, onOcclus
             newDeck.splice(spliceIdx, 0, c);
         });
         setDeck(newDeck);
-
         setDraftingCards([]);
+
+        // CHECK OVERFLOW POST-DRAFT
+        // We use the calculated new size: hand.length + kept.length
+        const totalCards = hand.length + kept.length;
+        if (totalCards > maxHandSize) {
+            const excess = totalCards - maxHandSize;
+            setDiscardGoal({ count: excess, draw: 0 });
+            setIsDiscardMode(true);
+            // keep isOpen false or whatever state handling?
+            // Actually, DiscardModal is an overlay.
+            // We don't set isOpen(true) yet.
+            return;
+        }
+
         setIsOpen(true);
     };
 

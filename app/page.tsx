@@ -150,6 +150,55 @@ export default function Home() {
     };
   }, [gameId, userId]);
 
+  // --- Session Control (Single Session Enforcement) ---
+  useEffect(() => {
+    if (!userId) return;
+
+    const channelName = `session-control-${userId}`;
+    const channel = supabase.channel(channelName);
+
+    channel
+      .on('broadcast', { event: 'force_logout' }, (payload) => {
+        // We received a logout signal. 
+        // We need to check if it's meant for US (active session) vs the new session.
+        // Actually, broadcast goes to everyone *subscribed*. The one sending it is also subscribed basically.
+        // We need to differentiate "I just logged in" vs "I was already here".
+        // Simple way: The new session sends the signal AFTER subscribing? 
+        // Or we include a session_id in the payload and compare.
+        // Since we don't have a unique session ID in state easily without generating one on mount...
+        // Let's generate a quick session ID REF.
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          // We are online. Tell others to leave.
+          // We need to wait a tiny bit to ensure others receive it?
+          // Only send if we just "logged in" (mounted)? 
+          // Yes, this effect runs on mount (when userId set).
+          const mySessionId = Math.random().toString(36).substring(7);
+          sessionStorage.setItem('tab_session_id', mySessionId);
+
+          channel.send({
+            type: 'broadcast',
+            event: 'force_logout',
+            payload: { new_session_id: mySessionId }
+          });
+        }
+      });
+
+    // Listen handler needs to be robust
+    channel.on('broadcast', { event: 'force_logout' }, (payload) => {
+      const mySessionId = sessionStorage.getItem('tab_session_id');
+      // If the broadcast comes from a DIFFERENT session ID, we logout.
+      if (payload.payload.new_session_id !== mySessionId) {
+        console.log("New session detected. Logging out this tab.");
+        alert("You have connected from another device/tab. This session is now closed.");
+        handleLeaveGame();
+      }
+    });
+
+    return () => { supabase.removeChannel(channel); };
+  }, [userId]);
+
   // Subscribe to Seeker Location (for Hider's "Proximity: Seeker" mode)
   useEffect(() => {
     if (!gameId || role !== 'HIDER' || proximityMode !== 'SEEKER') return;

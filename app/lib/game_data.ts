@@ -8,7 +8,7 @@ export const QUESTION_DATA = {
         draw: 3,
         keep: 1,
         timeLimit: 5,
-        desc: 'Does your location match this image/description?',
+        desc: 'Is your location the same as my location?',
         questions: {
             all: [
                 { label: "Commercial Airport", query: "Airport", size: 'small' },

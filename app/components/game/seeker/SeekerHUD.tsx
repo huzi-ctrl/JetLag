@@ -20,7 +20,7 @@ export default function SeekerHUD({ gameId, userId, gameSize, onOcclusionChange 
     const [activeTab, setActiveTab] = useState<'ASK' | 'HISTORY'>('ASK');
     const [selectedCategoryKey, setSelectedCategoryKey] = useState<string | null>(null);
     const [selectedOption, setSelectedOption] = useState<any | null>(null);
-    const [askHistory, setAskHistory] = useState<{ id: string, timestamp: number, status?: string, category?: string, question_text?: string, answer_text?: string, answer_blob_url?: string, questionId: string }[]>([]);
+    const [askHistory, setAskHistory] = useState<{ id: string, timestamp: number, status?: string, category?: string, question_text?: string, answer_text?: string, answer_blob_url?: string, questionId: string, params?: any }[]>([]);
 
 
     // Matching Manual Input State
@@ -71,7 +71,18 @@ export default function SeekerHUD({ gameId, userId, gameSize, onOcclusionChange 
         // Map questions to include ban status
         const questionsWithStatus = categoryQuestions.map(q => {
             const isBanned = bans.some(b => b.type === 'QUESTION_ID' && b.value === q.id);
-            return { ...q, isBanned };
+
+            // Check if used in history
+            const isUsed = askHistory.some(h => {
+                const hOpt = h.params?.option;
+                if (!hOpt) return false;
+
+                // Compare labels (handles string vs object options)
+                const hLabel = typeof hOpt === 'string' ? hOpt : hOpt.label;
+                return hLabel === q.label;
+            });
+
+            return { ...q, isBanned, isUsed };
         });
 
         return questionsWithStatus;
@@ -245,6 +256,39 @@ export default function SeekerHUD({ gameId, userId, gameSize, onOcclusionChange 
                 option: selectedOption,
                 center: [location.longitude, location.latitude],
                 radius: radius
+            });
+            return;
+        }
+
+        // Specific Logic for Thermometer
+        if (activeCategory?.id === 'thermometer') {
+            if (!location) {
+                alert("GPS Signal required for Thermometer check!");
+                return;
+            }
+            const dist = (selectedOption as any).val; // meters
+
+            // Initialize Tracking
+            setThermoStart([location.longitude, location.latitude]);
+            setThermoTarget(dist);
+            setIsOpen(false); // Close menu to show overlay
+            return;
+        }
+
+        // Specific Logic for Tentacles
+        if (activeCategory?.id === 'tentacles') {
+            if (!location) {
+                alert("GPS Signal required for Tentacles check!");
+                return;
+            }
+            const opt = selectedOption as any;
+
+            submitQuestion(`Tentacles: ${opt.label}`, {
+                type: opt.type,
+                dist: opt.dist,
+                seekerLoc: [location.longitude, location.latitude],
+                label: opt.label,
+                option: selectedOption
             });
             return;
         }
@@ -938,6 +982,7 @@ export default function SeekerHUD({ gameId, userId, gameSize, onOcclusionChange 
                                             // Fix: Compare by ID if possible, or Label as fallback (stable across renders)
                                             const isSelected = selectedOption && (opt.id ? selectedOption.id === opt.id : selectedOption.label === label);
                                             const isBanned = opt.isBanned; // Check banned status
+                                            const isUsed = opt.isUsed; // Check used status
 
                                             return (
                                                 <button
@@ -947,12 +992,15 @@ export default function SeekerHUD({ gameId, userId, gameSize, onOcclusionChange 
                                                             alert("This question is BANNED by a curse!");
                                                             return;
                                                         }
+                                                        if (isUsed) {
+                                                            return; // No alert needed, visual cue is enough, but prevent selection
+                                                        }
                                                         setSelectedOption(opt);
                                                     }}
-                                                    disabled={isBanned}
+                                                    disabled={isBanned || isUsed}
                                                     className={`p-3 rounded-lg text-left text-sm font-bold transition-all border-2
                                                         ${isSelected ? 'bg-blue-600 text-white border-blue-600 shadow-md' :
-                                                            isBanned ? 'bg-slate-100 text-slate-400 border-slate-100 cursor-not-allowed opacity-60' :
+                                                            (isBanned || isUsed) ? 'bg-slate-50 text-slate-400 border-slate-100 cursor-not-allowed opacity-60 grayscale' :
                                                                 'bg-white text-slate-600 border-slate-100 hover:border-blue-300'
                                                         }
                                                     `}
@@ -960,6 +1008,7 @@ export default function SeekerHUD({ gameId, userId, gameSize, onOcclusionChange 
                                                     <div className="flex justify-between items-center">
                                                         <span>{label}</span>
                                                         {isBanned && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-black uppercase">BANNED</span>}
+                                                        {isUsed && !isBanned && <span className="text-[10px] bg-slate-200 text-slate-500 px-2 py-0.5 rounded font-black uppercase">USED</span>}
                                                     </div>
                                                 </button>
                                             );
