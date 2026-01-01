@@ -787,6 +787,10 @@ export default function CardDeck({ gameSize = 'medium', gameId, userId, onOcclus
             console.error("Error casting curse:", err);
             alert("Failed to save curse to server, but played locally.");
         }
+
+
+        // Ensure modal is dismissed
+        setCurseInputCard(null);
     };
 
     // 6. Handle Curse Cast
@@ -1140,6 +1144,10 @@ export default function CardDeck({ gameSize = 'medium', gameId, userId, onOcclus
                                 {/* PLAY / CAST BUTTON */}
                                 <button
                                     onClick={() => {
+                                        if (activeCard.type === 'TIME') {
+                                            alert("Time cards are tallied at the end of the game! Keep them in your hand.");
+                                            return;
+                                        }
                                         const actionLabel = activeCard.type === 'CURSE' ? 'Cast this curse?' : `Play ${activeCard.name}?`;
                                         if (confirm(actionLabel)) {
                                             playCard(activeCard.id);
@@ -1147,10 +1155,10 @@ export default function CardDeck({ gameSize = 'medium', gameId, userId, onOcclus
                                     }}
                                     className={`flex-[2] py-4 font-black rounded-2xl text-lg shadow-xl hover:scale-105 transition-transform ${activeCard.type === 'CURSE'
                                         ? 'bg-red-600 text-white hover:bg-red-500 shadow-red-900/50'
-                                        : 'bg-white text-slate-900 hover:bg-slate-100'
+                                        : (activeCard.type === 'TIME' ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-white text-slate-900 hover:bg-slate-100')
                                         }`}
                                 >
-                                    {activeCard.type === 'CURSE' ? 'CAST CURSE' : 'PLAY CARD'}
+                                    {activeCard.type === 'CURSE' ? 'CAST CURSE' : (activeCard.type === 'TIME' ? 'NO ACTION' : 'PLAY CARD')}
                                 </button>
 
 

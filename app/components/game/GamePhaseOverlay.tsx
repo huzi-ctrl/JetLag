@@ -316,7 +316,7 @@ export default function GamePhaseOverlay({
             <SafeModal />
 
             {/* Timer Pill */}
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[50] pointer-events-none">
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[90] pointer-events-none">
                 <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-xl flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                     <span className="font-mono font-bold text-white text-lg tracking-wider">{timeLeftStr}</span>

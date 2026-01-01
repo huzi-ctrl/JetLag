@@ -130,35 +130,61 @@ export default function SeekerHUD({ gameId, userId, gameSize, onOcclusionChange 
         return () => { supabase.removeChannel(channel); };
     }, [gameId, userId]);
 
-    // Active Curses Subs
+    // Active Curses Subs (Mirrors Questions Logic)
     useEffect(() => {
+        console.log("DEBUG: SeekerHUD Active Curses Effect Triggered. GameID:", gameId);
         if (!gameId) return;
 
         const fetchCurses = async () => {
-            const { data } = await supabase
-                .from('active_curses')
-                .select('*')
-                .eq('game_id', gameId)
-                .order('created_at', { ascending: false });
-            if (data) setActiveCurses(data);
+            console.log(`DEBUG: Fetching curses for gameId: ${gameId}`);
+            const { data, error } = await supabase.from('active_curses').select('*').eq('game_id', gameId).order('created_at', { ascending: false });
+
+            if (error) {
+                console.error("DEBUG: Error fetching active_curses:", error);
+            } else {
+                console.log(`DEBUG: Fetched ${data?.length} active curses:`, data);
+                if (data) setActiveCurses(data);
+            }
         };
         fetchCurses();
 
         const channel = supabase.channel(`active-curses-${gameId}`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'active_curses' }, () => {
-                // Without Replica Identity FULL, we don't get the old record metadata on delete.
-                // We trust RLS to filter global events? Or we just refresh on ANY event.
-                // To be safe, we refresh on any event. RLS usually filters the *subscription* but here we might get events for other games if RLS doesn't block them at source.
-                // However, 'fetchCurses' queries with game_id, so it's safe data-wise.
-                fetchCurses();
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'active_curses', filter: `game_id=eq.${gameId}` }, (payload) => {
+                console.log("DEBUG: Curse INSERT detected:", payload);
+                const newCurse = payload.new;
+                setActiveCurses(prev => [newCurse, ...prev]); // Optimistic add
+                setViewingCurse(newCurse); // Auto-open the new curse!
             })
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'active_curses', filter: `game_id=eq.${gameId}` }, (payload) => {
+                console.log("DEBUG: Curse DELETE detected:", payload);
+                // For delete, we need the ID. With Replica Identity FULL we get it.
+                // If not, we fetch. But let's try to filter optimistically if we have the ID.
+                const oldRecord = payload.old;
+                if (oldRecord && oldRecord.id) {
+                    setActiveCurses(prev => prev.filter(c => c.id !== oldRecord.id));
+                } else {
+                    fetchCurses();
+                }
+            })
+            // Merging game_bans into this channel to save connections, or we can separate if strictly following "questions" pattern. 
+            // Questions pattern only has one table per channel usually, but here we have bans too. 
+            // I'll keep bans here but use the same filter style.
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_bans', filter: `game_id=eq.${gameId}` }, (payload) => {
                 setBans(prev => [...prev, payload.new]);
             })
-            .subscribe();
+            .subscribe((status) => {
+                console.log(`DEBUG: Active Curses Channel Status: ${status}`);
+            });
 
-        supabase.from('game_bans').select('*').eq('game_id', gameId).then(({ data }) => {
-            if (data) setBans(data);
+        // Initial fetch for bans
+        console.log("DEBUG: Fetching bans...");
+        supabase.from('game_bans').select('*').eq('game_id', gameId).then(({ data, error }) => {
+            if (error) {
+                console.error("DEBUG: Error fetching game_bans:", error);
+            } else {
+                console.log(`DEBUG: Fetched ${data?.length} bans:`, data);
+                if (data) setBans(data);
+            }
         });
 
         return () => { supabase.removeChannel(channel); };
@@ -692,7 +718,7 @@ export default function SeekerHUD({ gameId, userId, gameSize, onOcclusionChange 
             {/* --- THERMOMETER UI --- */}
             {
                 thermoStart && (
-                    <div className="absolute top-safe left-4 right-4 z-[40] pointer-events-auto animate-in slide-in-from-top fade-in duration-300">
+                    <div className="absolute top-safe left-4 right-4 z-[110] pointer-events-auto animate-in slide-in-from-top fade-in duration-300">
                         <div className="bg-slate-900/90 text-white p-4 rounded-xl shadow-2xl border border-blue-500/50 backdrop-blur-md flex flex-col gap-3">
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-3">
@@ -846,7 +872,6 @@ export default function SeekerHUD({ gameId, userId, gameSize, onOcclusionChange 
             {/* --- MAIN DRAWER (Questions & History) --- */}
             <div className={`fixed inset-0 z-[100] bg-slate-50/95 backdrop-blur-sm transition-transform duration-300 ease-out transform ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}>
                 <div className="p-4 bg-white shadow-sm flex flex-col gap-4 pb-4 pt-safe-top">
-                    {/* Header */}
                     <div className="flex justify-between items-center px-2">
                         <div className="font-black text-slate-300 text-xs tracking-widest uppercase">Select Frequency</div>
                         <button
