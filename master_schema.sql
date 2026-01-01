@@ -91,6 +91,8 @@ create table if not exists public.game_rounds (
   duration_seconds int not null,
   found_by_user_id uuid references public.profiles(id),
   round_number int not null,
+  final_score int, -- Calculated score
+  score_breakdown jsonb,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -133,6 +135,7 @@ create policy "Read Players" on public.game_players for select using (true);
 create policy "Read Questions" on public.questions for select using (true);
 create policy "Read Map Events" on public.map_events for select using (true);
 create policy "Read Rounds" on public.game_rounds for select using (true);
+create policy "Update Rounds" on public.game_rounds for update to authenticated using (true);
 
 -- Curse Policies
 create policy "Curse Read" on public.curse_events for select to authenticated using (true);

@@ -21,7 +21,7 @@ export default function Leaderboard({ gameId, onClose }: LeaderboardProps) {
                     finder:found_by_user_id(username)
                 `)
                 .eq('game_id', gameId)
-                .order('duration_seconds', { ascending: false }); // Longest time wins?
+                .order('final_score', { ascending: false }); // Sort by calculated score
 
             if (data) setRounds(data);
         };
@@ -51,7 +51,7 @@ export default function Leaderboard({ gameId, onClose }: LeaderboardProps) {
                             </div>
                         </div>
                         <div className="text-right">
-                            <div className="text-2xl font-mono text-yellow-400 font-bold">{formatTime(round.duration_seconds)}</div>
+                            <div className="text-2xl font-mono text-yellow-400 font-bold">{formatTime(round.final_score || round.duration_seconds)}</div>
                             <div className="text-[10px] uppercase text-slate-600 font-bold tracking-widest">SURVIVED</div>
                         </div>
                     </div>

@@ -7,6 +7,7 @@ import SeekerHUD from './seeker/SeekerHUD';
 import LocationSync from './LocationSync';
 import HostRoundControls from './HostRoundControls';
 import Leaderboard from './Leaderboard';
+import EndgameSummary from './EndgameSummary';
 
 interface GameStackProps {
     role: 'HIDER' | 'SEEKER';
@@ -121,33 +122,47 @@ export default function GameStack({ role, gameId, userId, onLeave, onOcclusionCh
 
     const gameSize = gameState.config.size || 'medium';
 
+
+
     // ROUND OVER LOGIC
     if (gameState.status === 'ended') {
         const isHider = role === 'HIDER';
-        // We'll show Leaderboard by default? Or "FOUND" screen?
-        // Let's show "FOUND" Screen with buttons.
-        return (
-            <div className="absolute inset-0 pointer-events-auto z-[140] bg-black/90 flex flex-col items-center justify-center">
-                <div className="text-6xl font-black text-yellow-500 mb-8 animate-bounce">
-                    {isHider ? 'FOUND!' : 'HIDER FOUND!'}
-                </div>
+        // Assume Hider is host for now, as per logic above
+        const isHost = userId === gameState.hider_id;
 
-                {/* Host Controls (Assume Hider is Host for simplicity) */}
-                {userId === gameState.hider_id ? (
-                    <HostRoundControls gameId={gameId} onEndGame={() => setShowLeaderboard(true)} />
+        return (
+            <div className="absolute inset-0 pointer-events-auto z-[140] bg-black/90 flex flex-col items-center justify-center p-4">
+                {/* Only show "FOUND" banner if not showing tally? No, show both. */}
+                {showLeaderboard ? (
+                    <Leaderboard gameId={gameId} onClose={() => setShowLeaderboard(false)} />
                 ) : (
                     <>
-                        <div className="text-white/50 animate-pulse text-center mb-8">
-                            Waiting for Host to decide next round...
+                        <div className="text-4xl md:text-6xl font-black text-yellow-500 mb-8 animate-bounce text-center">
+                            {isHider ? 'FOUND!' : 'HIDER FOUND!'}
                         </div>
-                        <button onClick={() => setShowLeaderboard(true)} className="mt-8 text-sm text-white underline z-[160] relative">
-                            View Leaderboard
-                        </button>
-                    </>
-                )}
 
-                {showLeaderboard && (
-                    <Leaderboard gameId={gameId} onClose={onLeave} />
+                        <EndgameSummary
+                            gameId={gameId}
+                            gameSize={gameSize}
+                            isHost={isHost}
+                            onClose={() => setShowLeaderboard(false)} // Host controls hidden inside Leaderboard? No component has HostControls inside.
+                            // Actually HostRoundControls is separate.
+                            // Let's make EndgameSummary have a slot or handle it.
+                            // In my code for EndgameSummary, I put "Controls / Next Round" button calling onClose.
+                            // If onClose is called, what happens?
+                            // We probably want to show HostRoundControls.
+                            // Let's just show HostRoundControls BELOW summary if host?
+                            // Let's just show HostRoundControls BELOW summary if host?
+                            onViewLeaderboard={() => setShowLeaderboard(true)}
+                            onLeave={onLeave}
+                        />
+
+                        {isHost && (
+                            <div className="mt-8">
+                                <HostRoundControls gameId={gameId} onEndGame={() => setShowLeaderboard(true)} />
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         );
